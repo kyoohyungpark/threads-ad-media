@@ -92,12 +92,26 @@
     z-index: 5;
   }
   .modal-title { font-size: 18px; font-weight: 600; margin: 8px 0 14px; clear: both; }
-  .modal-media { margin-bottom: 14px; }
-  .modal-media video, .modal-media img {
-    width: 100%; border-radius: 12px;
-    background: #1d1d1f;
+  .modal-media-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
   }
-  .modal-media video { max-height: 80vh; }
+  .modal-col-left, .modal-col-right {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+  }
+  .modal-media { display: flex; flex-direction: column; gap: 6px; }
+  .modal-media video, .modal-media img {
+    width: 100%; border-radius: 10px;
+    background: #1d1d1f;
+    display: block;
+  }
+  .modal-media video { max-height: 70vh; }
+  .modal-media img { max-height: 70vh; object-fit: contain; }
   .save-hint {
     background: #1d1d1f; border-radius: 10px;
     padding: 12px 14px; font-size: 13px;
@@ -212,21 +226,26 @@ function openModal(adId) {
   if (!ad) return;
   document.getElementById('modal-title').textContent = ad.title;
   const mediaEl = document.getElementById('modal-media');
-  let html = '';
+  let leftHtml = '';
+  let rightHtml = '';
   if (ad.video) {
     const vurl = REPO_BASE + encodeURI(ad.video);
-    html += `<div class="modal-media">
+    leftHtml += `<div class="modal-media">
       <video src="${vurl}" controls playsinline preload="metadata"></video>
       <a class="save-btn" href="${vurl}" download="${escapeHtml(ad.id)}_video.mp4" target="_blank">📥 동영상 저장</a>
     </div>`;
   }
   (ad.photos || []).forEach((p, i) => {
     const purl = REPO_BASE + encodeURI(p);
-    html += `<div class="modal-media">
+    rightHtml += `<div class="modal-media">
       <img src="${purl}" loading="lazy" alt="">
       <a class="save-btn" href="${purl}" download="${escapeHtml(ad.id)}_${i+1}.jpg" target="_blank">📥 사진${i+1} 저장</a>
     </div>`;
   });
+  // If no video, photos go full width on left; if no photos, video full width
+  const html = ad.video && (ad.photos || []).length > 0
+    ? `<div class="modal-media-grid"><div class="modal-col-left">${leftHtml}</div><div class="modal-col-right">${rightHtml}</div></div>`
+    : `<div>${leftHtml}${rightHtml}</div>`;
   mediaEl.innerHTML = html;
   document.getElementById('modal').classList.add('open');
   document.body.style.overflow = 'hidden';
