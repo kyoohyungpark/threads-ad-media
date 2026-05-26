@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
+<title>광고 미디어</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    background: #0a0a0c;
+    color: #f5f5f7;
+    line-height: 1.5;
+    padding-bottom: 80px;
+  }
+  header {
+    padding: 16px;
+    background: linear-gradient(180deg, #1d1d1f 0%, #0a0a0c 100%);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    border-bottom: 1px solid #1d1d1f;
+  }
+  h1 { margin: 0; font-size: 18px; font-weight: 600; }
+  .meta { color: #86868b; font-size: 12px; margin-top: 4px; }
+  .search-row { margin-top: 10px; display: flex; gap: 8px; }
+  .search-row input {
+    flex: 1; padding: 10px 14px; border-radius: 22px;
+    border: 1px solid #1d1d1f; background: #1d1d1f; color: #f5f5f7;
+    font-size: 14px; outline: none;
+  }
+  main { padding: 12px; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 10px;
+  }
+  .card {
+    background: #1d1d1f;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.15s;
+    position: relative;
+    aspect-ratio: 9 / 16;
+  }
+  .card:active { transform: scale(0.97); }
+  .card .thumb {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+    background: #2c2c2e;
+  }
+  .card .title-overlay {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    padding: 24px 10px 10px;
+    background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.85) 100%);
+    font-size: 13px; font-weight: 500;
+  }
+  .card .badge {
+    position: absolute; top: 8px; right: 8px;
+    background: rgba(0,0,0,0.6); color: #fff;
+    border-radius: 12px; padding: 2px 8px;
+    font-size: 11px;
+  }
+  .card .play-icon {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    color: rgba(255,255,255,0.9);
+    font-size: 36px;
+    pointer-events: none;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+  }
+
+  /* Modal/Lightbox */
+  .modal {
+    display: none;
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.92);
+    z-index: 100;
+    overflow-y: auto;
+  }
+  .modal.open { display: block; }
+  .modal-content {
+    max-width: 600px; margin: 0 auto;
+    padding: 16px;
+    position: relative;
+  }
+  .modal-close {
+    position: sticky; top: 0; float: right;
+    background: rgba(255,255,255,0.15); color: #fff;
+    border: none; width: 36px; height: 36px;
+    border-radius: 50%; font-size: 20px; cursor: pointer;
+    z-index: 5;
+  }
+  .modal-title { font-size: 18px; font-weight: 600; margin: 8px 0 14px; clear: both; }
+  .modal-media { margin-bottom: 14px; }
+  .modal-media video, .modal-media img {
+    width: 100%; border-radius: 12px;
+    background: #1d1d1f;
+  }
+  .modal-media video { max-height: 80vh; }
+  .save-hint {
+    background: #1d1d1f; border-radius: 10px;
+    padding: 12px 14px; font-size: 13px;
+    color: #d2d2d7;
+    margin-bottom: 14px;
+  }
+  .save-hint strong { color: #f5c400; }
+  .save-btn {
+    display: inline-block; margin-top: 8px;
+    padding: 6px 12px; border-radius: 14px;
+    background: #2c2c2e; color: #fff;
+    font-size: 12px; text-decoration: none;
+    border: 1px solid #444;
+  }
+  .empty {
+    text-align: center; padding: 60px 20px;
+    color: #86868b;
+  }
+  .empty h2 { color: #f5f5f7; font-size: 16px; }
+  .empty code {
+    display: block; background: #1d1d1f; padding: 10px 14px;
+    border-radius: 8px; margin: 12px auto; max-width: 360px;
+    color: #f5c400; font-size: 12px; text-align: left;
+    white-space: pre-line;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>🎬 광고 미디어 라이브러리</h1>
+  <div class="meta" id="meta">로딩 중...</div>
+  <div class="search-row">
+    <input type="text" id="search" placeholder="제목 검색...">
+  </div>
+</header>
+<main>
+  <div class="grid" id="grid"></div>
+</main>
+
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div class="modal-title" id="modal-title"></div>
+    <div class="save-hint">
+      📥 <strong>휴대폰 저장</strong>: 동영상은 우측 하단 ⋮ 메뉴 → "동영상 다른 이름으로 저장"<br>
+      사진은 길게 눌러서 "이미지 다운로드"
+    </div>
+    <div id="modal-media"></div>
+  </div>
+</div>
+
+<script>
+const REPO_BASE = 'https://raw.githack.com/kyoohyungpark/threads-ad-media/main/';
+
+async function load() {
+  try {
+    const r = await fetch('manifest.json?v=' + Date.now());
+    if (!r.ok) throw new Error('no manifest');
+    const data = await r.json();
+    render(data);
+  } catch (e) {
+    document.getElementById('grid').innerHTML = `
+      <div class="empty" style="grid-column: 1 / -1;">
+        <h2>아직 광고가 없어요</h2>
+        <p>로컬 폴더에 광고 폴더를 만들고<br>[광고 동기화] 바로가기를 클릭하세요</p>
+        <code>C:\\Users\\user\\Desktop\\Threads광고\\
+└── 002_헤어밤\\
+    ├── video.mp4
+    ├── 1.jpg
+    └── 2.jpg</code>
+      </div>`;
+    document.getElementById('meta').textContent = '비어있음';
+  }
+}
+
+let allAds = [];
+
+function render(data) {
+  allAds = (data.ads || []).slice();
+  document.getElementById('meta').textContent =
+    `${allAds.length}개 광고 · 마지막 업데이트 ${data.updated || '-'}`;
+  applyFilter();
+}
+
+function applyFilter() {
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  const filtered = q ? allAds.filter(a => a.title.toLowerCase().includes(q) || a.id.toLowerCase().includes(q)) : allAds;
+  const grid = document.getElementById('grid');
+  if (filtered.length === 0) {
+    grid.innerHTML = '<div class="empty" style="grid-column: 1 / -1;">검색 결과 없음</div>';
+    return;
+  }
+  grid.innerHTML = filtered.map(ad => {
+    const thumb = ad.photos && ad.photos[0]
+      ? REPO_BASE + encodeURI(ad.photos[0])
+      : (ad.video ? REPO_BASE + encodeURI(ad.video) : '');
+    const isVideo = ad.photos && ad.photos[0] ? false : !!ad.video;
+    const badge = (ad.video ? '🎬' : '') + (ad.photos ? '📷' + ad.photos.length : '');
+    return `<div class="card" onclick='openModal(${JSON.stringify(ad.id)})'>
+      ${isVideo
+        ? `<video class="thumb" src="${thumb}" muted playsinline preload="metadata"></video>`
+        : `<img class="thumb" src="${thumb}" loading="lazy" alt="">`}
+      ${ad.video ? '<div class="play-icon">▶</div>' : ''}
+      <div class="badge">${badge}</div>
+      <div class="title-overlay">${escapeHtml(ad.title)}</div>
+    </div>`;
+  }).join('');
+}
+
+function openModal(adId) {
+  const ad = allAds.find(a => a.id === adId);
+  if (!ad) return;
+  document.getElementById('modal-title').textContent = ad.title;
+  const mediaEl = document.getElementById('modal-media');
+  let html = '';
+  if (ad.video) {
+    const vurl = REPO_BASE + encodeURI(ad.video);
+    html += `<div class="modal-media">
+      <video src="${vurl}" controls playsinline preload="metadata"></video>
+      <a class="save-btn" href="${vurl}" download="${escapeHtml(ad.id)}_video.mp4" target="_blank">📥 동영상 저장</a>
+    </div>`;
+  }
+  (ad.photos || []).forEach((p, i) => {
+    const purl = REPO_BASE + encodeURI(p);
+    html += `<div class="modal-media">
+      <img src="${purl}" loading="lazy" alt="">
+      <a class="save-btn" href="${purl}" download="${escapeHtml(ad.id)}_${i+1}.jpg" target="_blank">📥 사진${i+1} 저장</a>
+    </div>`;
+  });
+  mediaEl.innerHTML = html;
+  document.getElementById('modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  document.body.style.overflow = '';
+  // Stop video playback
+  document.querySelectorAll('#modal-media video').forEach(v => { v.pause(); v.currentTime = 0; });
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+document.getElementById('search').oninput = applyFilter;
+document.getElementById('modal').onclick = (e) => {
+  if (e.target.id === 'modal') closeModal();
+};
+
+load();
+</script>
+</body>
+</html>
